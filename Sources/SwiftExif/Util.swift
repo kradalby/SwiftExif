@@ -24,9 +24,3 @@ extension String {
     return nil
   }
 }
-
-extension UnsafeMutablePointer {
-  func toArray(capacity: Int) -> [Pointee] {
-    return Array(UnsafeBufferPointer(start: self, count: capacity))
-  }
-}

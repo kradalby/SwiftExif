@@ -15,7 +15,7 @@ public struct Image {
   public init(imagePath: URL) {
     self.data = ["undefined": [:]]
 
-    let rawUnsafeExifData = exif_data_new_from_file(imagePath.absoluteString)
+    let rawUnsafeExifData = exif_data_new_from_file(imagePath.path)
     defer {
       exif_data_free(
         rawUnsafeExifData
@@ -42,7 +42,9 @@ public struct Image {
           if let ifdName = content.pointee.ifdName() {
             self.data[ifdName] = ifdDict
           } else {
-            self.data["undefined"]?.merging(ifdDict) { (current, _) in current }
+            self.data["undefined"] = self.data["undefined"]?.merging(ifdDict) { (current, _) in
+              current
+            }
           }
         }
       }
@@ -57,12 +59,15 @@ public struct Image {
 
 extension ExifData {
   mutating func content() -> [UnsafeMutablePointer<ExifContent>?] {
-    let contents = Array(
-      UnsafeBufferPointer(
-        start: &self.ifd.0,
-        count: EXIFIFDCOUNT
-      )
-    )
+
+    let contents = withUnsafePointer(
+      to: &self.ifd.0
+    ) {
+      Array(
+        UnsafeBufferPointer(
+          start: $0, count: EXIFIFDCOUNT
+        ))
+    }
 
     return contents
 
@@ -105,7 +110,6 @@ extension ExifEntry {
 
     if let name = exif_tag_get_title_in_ifd(self.tag, ifd) {
       let str = String(cString: name)
-      print(str)
       return str
     }
 

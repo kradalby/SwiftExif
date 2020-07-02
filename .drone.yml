@@ -1,0 +1,69 @@
+---
+{
+   "kind": "pipeline",
+   "name": "Kubernetes",
+   "node_selector": {
+      "drone": true
+   },
+   "steps": [
+      {
+         "commands": [
+            "apt update",
+            "apt install -y libexif-dev",
+            "make build-cross"
+         ],
+         "image": "swift:latest",
+         "name": "Swift build",
+         "pull": "always"
+      },
+      {
+         "image": "appleboy/drone-discord",
+         "name": "Notify Discord",
+         "pull": "always",
+         "settings": {
+            "message": "{{#success build.status}}\n✅  Build #{{build.number}} of `{{repo.name}}` succeeded.\n\n📝  Commit by {{commit.author}} on `{{commit.branch}}`:\n``` {{commit.message}} ```\n🌐  {{ build.link }}\n\n✅  duration: {{duration build.started build.finished}}\n✅  started: {{datetime build.started \"2006/01/02 15:04\" \"UTC\"}}\n✅  finished: {{datetime build.finished \"2006/01/02 15:04\" \"UTC\"}}\n\n{{else}}\n@everyone\n❌  Build #{{build.number}} of `{{repo.name}}` failed.\n\n📝  Commit by {{commit.author}} on `{{commit.branch}}`:\n``` {{commit.message}} ```\n🌐  {{ build.link }}\n\n✅  duration: {{duration build.started build.finished}}\n✅  started: {{datetime build.started \"2006/01/02 15:04\" \"UTC\"}}\n✅  finished: {{datetime build.finished \"2006/01/02 15:04\" \"UTC\"}}\n\n{{/success}}\n",
+            "webhook_id": {
+               "from_secret": "discord_webhook_id"
+            },
+            "webhook_token": {
+               "from_secret": "discord_webhook_token"
+            }
+         },
+         "when": {
+            "status": [
+               "success",
+               "failure"
+            ]
+         }
+      }
+   ],
+   "type": "kubernetes"
+}
+---
+{
+   "get": {
+      "name": "id",
+      "path": "discord-build"
+   },
+   "kind": "secret",
+   "name": "discord_webhook_id"
+}
+---
+{
+   "get": {
+      "name": "token",
+      "path": "discord-build"
+   },
+   "kind": "secret",
+   "name": "discord_webhook_token"
+}
+---
+{
+   "get": {
+      "name": "deploy",
+      "path": "ssh"
+   },
+   "kind": "secret",
+   "name": "ssh_key"
+}
+...
