@@ -10,7 +10,7 @@
          "commands": [
             "apt update",
             "apt install -y libexif-dev",
-            "make build-cross"
+            "make build"
          ],
          "image": "swift:latest",
          "name": "Swift build",
