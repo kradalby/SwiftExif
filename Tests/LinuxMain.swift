@@ -3,5 +3,6 @@ import XCTest
 import SwiftExifTests
 
 var tests = [XCTestCaseEntry]()
-tests += SwiftExifTests.allTests()
+tests += SwiftExifTests.__allTests()
+
 XCTMain(tests)

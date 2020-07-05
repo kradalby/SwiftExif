@@ -1,9 +1,15 @@
 
+generate:
+	swift test --generate-linuxmain
+
 build:
 	swift build
 
 build-cross:
 	swift build -Xswiftc '-DCROSSPLATFORM'
+
+test:
+	swift test
 
 dev:
 	swift package generate-xcodeproj
