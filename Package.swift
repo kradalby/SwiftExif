@@ -28,6 +28,14 @@ let package = Package(
         .brew(["libexif"]),
       ]
     ),
+    .systemLibrary(
+      name: "iptc",
+      pkgConfig: "libiptcdata",
+      providers: [
+        .apt(["libiptcdata"]),
+        .brew(["libiptcdata"]),
+      ]
+    ),
     .target(
       name: "SwiftExif",
       dependencies: ["exif"]

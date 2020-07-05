@@ -1,0 +1,4 @@
+module iptc {
+	umbrella header "swiftexif_iptc.h"
+	link "iptc"
+}
