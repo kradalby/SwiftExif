@@ -8,7 +8,9 @@ extension SwiftExifTests {
     static let __allTests__SwiftExifTests = [
         ("test", test),
         ("testExifReadExifData", testExifReadExifData),
+        ("testExifReadIfd", testExifReadIfd),
         ("testImageReadData", testImageReadData),
+        ("testIptcReadIptcData", testIptcReadIptcData),
     ]
 }
 

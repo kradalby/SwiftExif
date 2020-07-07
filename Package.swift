@@ -32,13 +32,13 @@ let package = Package(
       name: "iptc",
       pkgConfig: "libiptcdata",
       providers: [
-        .apt(["libiptcdata"]),
+        .apt(["libiptcdata0-dev"]),
         .brew(["libiptcdata"]),
       ]
     ),
     .target(
       name: "SwiftExif",
-      dependencies: ["exif"]
+      dependencies: ["exif", "iptc"]
     ),
     .testTarget(
       name: "SwiftExifTests",

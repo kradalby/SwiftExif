@@ -8,12 +8,10 @@
    "steps": [
       {
          "commands": [
-            "apt update",
-            "apt install -y libexif-dev",
             "make test",
             "make build"
          ],
-         "image": "swift:latest",
+         "image": "kradalby/swift:groovy",
          "name": "Swift build",
          "pull": "always"
       },
