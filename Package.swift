@@ -9,7 +9,7 @@ let package = Package(
     // Products define the executables and libraries produced by a package, and make them visible to other packages.
     .library(
       name: "SwiftExif",
-      targets: ["SwiftExif"]
+      targets: ["SwiftExif", "ExifFormat"]
     )
   ],
   dependencies: [
@@ -37,12 +37,19 @@ let package = Package(
       ]
     ),
     .target(
+      name: "ExifFormat",
+      dependencies: [],
+      path: "Sources/ExifFormat"
+    ),
+    .target(
       name: "SwiftExif",
-      dependencies: ["exif", "iptc"]
+      dependencies: ["exif", "ExifFormat", "iptc"]
     ),
     .testTarget(
       name: "SwiftExifTests",
       dependencies: ["SwiftExif"]
     ),
-  ]
+  ],
+  swiftLanguageVersions: [.v5],
+  cLanguageStandard: .c11
 )

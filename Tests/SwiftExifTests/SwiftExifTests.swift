@@ -38,6 +38,31 @@ final class SwiftExifTests: XCTestCase {
     XCTAssertEqual(contents.count, 5)
   }
 
+  func testExifEntry() {
+    var exifData = ExifData.new(imagePath: testImage)
+
+    XCTAssertNotNil(exifData)
+
+    let contents = exifData!.content()
+
+    var formats = [String?]()
+    for content in contents {
+      for var entry in content.entries() {
+        let tag = entry.tag
+        let rawValue = entry.rawValue()
+        // print()
+        print(tag.name())
+        // print(tag.title())
+        // print(tag.description())
+        print(rawValue)
+        // print()
+        formats.append(entry.format.name())
+      }
+    }
+    print(formats)
+
+  }
+
   func testImageReadData() {
     let image = Image(imagePath: URL(fileURLWithPath: testImage))
     let exifData = image.Exif()
@@ -169,6 +194,7 @@ final class SwiftExifTests: XCTestCase {
     ("test", test),
     ("testExifReadExifData", testExifReadExifData),
     ("testExifReadIfd", testExifReadIfd),
+    ("testExifEntry", testExifEntry),
     ("testImageReadData", testImageReadData),
     ("testIptcReadIptcData", testIptcReadIptcData),
   ]

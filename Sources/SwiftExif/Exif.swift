@@ -5,6 +5,7 @@
 //  Created by Kristoffer Dalby on 05/07/2020.
 //
 
+import ExifFormat
 import Foundation
 import exif
 
@@ -85,6 +86,7 @@ extension ExifContent {
 }
 
 extension ExifEntry {
+
   func key() -> String? {
 
     let ifd = exif_content_get_ifd(self.parent)
@@ -110,11 +112,63 @@ extension ExifEntry {
     return str
   }
 
+  mutating func rawValue() -> String? {
+    let value = UnsafeMutablePointer<Int8>.allocate(capacity: 256)
+    exif_entry_format_value(
+      &self,
+      value,
+      256
+    )
+
+    let str = String(cString: value)
+    return str
+  }
+
   mutating func toTuple() -> (String, String)? {
     if let key = self.key() {
       let value = self.value()
 
       return (key, value)
+    }
+    return nil
+  }
+}
+
+extension ExifTag {
+  func name() -> String? {
+    if let value = exif_tag_get_name(self) {
+      let str = String(cString: value)
+      return str
+    }
+
+    return nil
+  }
+
+  func title() -> String? {
+    if let value = exif_tag_get_title(self) {
+      let str = String(cString: value)
+      return str
+    }
+
+    return nil
+  }
+
+  func description() -> String? {
+    if let value = exif_tag_get_description(self) {
+      let str = String(cString: value)
+      return str
+    }
+
+    return nil
+  }
+
+}
+
+extension ExifFormat {
+  func name() -> String? {
+    if let value = exif_format_get_name(self) {
+      let str = String(cString: value)
+      return str
     }
     return nil
   }
