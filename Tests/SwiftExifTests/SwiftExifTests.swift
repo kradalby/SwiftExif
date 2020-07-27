@@ -5,6 +5,7 @@ import XCTest
 @testable import iptc
 
 let testImage = "Tests/test.jpg"
+let testImageSpecialCharacters = "Tests/test_special_chars.jpg"
 
 final class SwiftExifTests: XCTestCase {
   func test() {
@@ -162,7 +163,17 @@ final class SwiftExifTests: XCTestCase {
 
     XCTAssertEqual(keywords.count, 8)
     XCTAssertEqual(keywords.count, keywordsFromDict.count)
+  }
 
+  func testIptcReadIptcDataNonASCII() {
+    let iptcData = IptcData.new(imagePath: testImageSpecialCharacters)
+
+    XCTAssertNotNil(iptcData)
+
+    let keywords = iptcData!.keywords()
+
+    XCTAssertEqual(keywords.count, 4)
+    XCTAssertTrue(keywords.contains("Midtøsten"))
   }
 
   static var __allTests = [
@@ -171,5 +182,6 @@ final class SwiftExifTests: XCTestCase {
     ("testExifReadIfd", testExifReadIfd),
     ("testImageReadData", testImageReadData),
     ("testIptcReadIptcData", testIptcReadIptcData),
+    ("testIptcReadIptcDataNonASCII", testIptcReadIptcDataNonASCII),
   ]
 }
