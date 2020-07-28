@@ -24,6 +24,20 @@ public struct Image {
     return [:]
   }
 
+  public func ExifRaw() -> [String: [String: String]] {
+    if var data = self.exifData {
+      return data.toRawDict()
+    }
+    return [:]
+  }
+
+  public func ExifWithRaw() -> [String: [String: (String, String)]] {
+    if var data = self.exifData {
+      return data.toValueAndRawValueDict()
+    }
+    return [:]
+  }
+
   public func Iptc() -> [String: Any] {
     if let data = self.iptcData {
       return data.toDict()
