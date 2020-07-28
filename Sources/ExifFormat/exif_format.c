@@ -45,7 +45,7 @@ void exif_entry_format_value(ExifEntry *e, char *val, size_t maxlen)
     switch (e->format)
     {
     case EXIF_FORMAT_UNDEFINED:
-        snprintf(val, maxlen, _("%i bytes undefined data"), e->size);
+        snprintf(val, maxlen, ("%i bytes undefined data"), e->size);
         break;
     case EXIF_FORMAT_BYTE:
     case EXIF_FORMAT_SBYTE:
@@ -192,7 +192,7 @@ void exif_entry_format_value(ExifEntry *e, char *val, size_t maxlen)
     case EXIF_FORMAT_DOUBLE:
     case EXIF_FORMAT_FLOAT:
     default:
-        snprintf(val, maxlen, _("%i bytes unsupported data type"),
+        snprintf(val, maxlen, ("%i bytes unsupported data type"),
                  e->size);
         break;
     }

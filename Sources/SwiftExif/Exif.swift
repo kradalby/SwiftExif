@@ -42,6 +42,20 @@ extension ExifData {
       uniqueKeysWithValues:
         zip(ifds, self.content()).map({ ($0, $1.toDict()) }))
   }
+
+  mutating func toRawDict() -> [String: [String: String]] {
+    let ifds = ["0", "1", "EXIF", "GPS", "Interoperability"]
+    return Dictionary(
+      uniqueKeysWithValues:
+        zip(ifds, self.content()).map({ ($0, $1.toRawDict()) }))
+  }
+
+  mutating func toValueAndRawValueDict() -> [String: [String: (String, String)]] {
+    let ifds = ["0", "1", "EXIF", "GPS", "Interoperability"]
+    return Dictionary(
+      uniqueKeysWithValues:
+        zip(ifds, self.content()).map({ ($0, $1.toValueAndRawValueDict()) }))
+  }
 }
 
 extension ExifContent {
@@ -83,6 +97,28 @@ extension ExifContent {
 
     return Dictionary(uniqueKeysWithValues: entries)
   }
+
+  func toRawDict() -> [String: String] {
+    var entries = [(String, String)]()
+    for var entry in self.entries() {
+      if let tuple = entry.toRawTuple() {
+        entries.append(tuple)
+      }
+    }
+
+    return Dictionary(uniqueKeysWithValues: entries)
+  }
+
+  func toValueAndRawValueDict() -> [String: (String, String)] {
+    var entries = [(String, (String, String))]()
+    for var entry in self.entries() {
+      if let tuple = entry.toTupleWithRaw() {
+        entries.append(tuple)
+      }
+    }
+
+    return Dictionary(uniqueKeysWithValues: entries)
+  }
 }
 
 extension ExifEntry {
@@ -109,7 +145,8 @@ extension ExifEntry {
     )
 
     let str = String(cString: value)
-    return str
+    let trimmedValue = str.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmedValue
   }
 
   mutating func rawValue() -> String? {
@@ -121,7 +158,8 @@ extension ExifEntry {
     )
 
     let str = String(cString: value)
-    return str
+    let trimmedValue = str.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmedValue
   }
 
   mutating func toTuple() -> (String, String)? {
@@ -129,6 +167,22 @@ extension ExifEntry {
       let value = self.value()
 
       return (key, value)
+    }
+    return nil
+  }
+
+  mutating func toRawTuple() -> (String, String)? {
+    if let key = self.key(), let value = self.rawValue() {
+      return (key, value)
+    }
+    return nil
+  }
+
+  mutating func toTupleWithRaw() -> (String, (String, String))? {
+    if let key = self.key(), let rawValue = self.rawValue() {
+      let value = self.value()
+
+      return (key, (value: value, raw: rawValue))
     }
     return nil
   }

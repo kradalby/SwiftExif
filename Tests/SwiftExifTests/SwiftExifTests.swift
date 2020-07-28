@@ -38,29 +38,33 @@ final class SwiftExifTests: XCTestCase {
     XCTAssertEqual(contents.count, 5)
   }
 
-  func testExifEntry() {
+  func testExifEntryValueAndRawValue() {
     var exifData = ExifData.new(imagePath: testImage)
 
     XCTAssertNotNil(exifData)
 
-    let contents = exifData!.content()
+    let dict = exifData!.toValueAndRawValueDict()
 
-    var formats = [String?]()
-    for content in contents {
-      for var entry in content.entries() {
-        let tag = entry.tag
-        let rawValue = entry.rawValue()
-        // print()
-        print(tag.name())
-        // print(tag.title())
-        // print(tag.description())
-        print(rawValue)
-        // print()
-        formats.append(entry.format.name())
-      }
-    }
-    print(formats)
+    XCTAssertEqual(dict["0"]?.count, 10)
+    XCTAssertEqual(dict["1"]?.count, 0)
+    XCTAssertEqual(dict["EXIF"]?.count, 31)
+    XCTAssertEqual(dict["GPS"]?.count, 9)
+    XCTAssertEqual(dict["Interoperability"]?.count, 0)
 
+    XCTAssertEqual(dict["0"]?["Date and Time"]!.1, "2018:03:10 13:36:56")
+    XCTAssertEqual(dict["0"]?["Resolution Unit"]!.1, "2")
+
+    XCTAssertEqual(dict["EXIF"]?["Camera Owner Name"]!.1, "Kristoffer Andreas Dalby")
+
+    XCTAssertEqual(dict["EXIF"]?["Shutter Speed"]!.1, "7.3219")
+    XCTAssertEqual(dict["EXIF"]?["Metering Mode"]!.1, "5")
+    XCTAssertEqual(dict["EXIF"]?["Exposure Time"]!.1, "0.006")
+    XCTAssertEqual(dict["EXIF"]?["Aperture"]!.1, "4")
+    XCTAssertEqual(dict["EXIF"]?["F-Number"]!.1, "4")
+
+    XCTAssertEqual(dict["GPS"]?["East or West Longitude"]!.1, "E")
+    XCTAssertEqual(dict["GPS"]?["Longitude"]!.1, "4, 37, 41.88")
+    XCTAssertEqual(dict["GPS"]?["Altitude Reference"]!.1, "0x01")
   }
 
   func testImageReadData() {
@@ -130,10 +134,10 @@ final class SwiftExifTests: XCTestCase {
     XCTAssertEqual(exifData["EXIF"]?["Aperture"], "4.00 EV (f/4.0)")
     XCTAssertEqual(exifData["EXIF"]?["F-Number"], "f/4.0")
 
-    XCTAssertEqual(exifData["GPS"]?["Altitude"], " 0")
+    XCTAssertEqual(exifData["GPS"]?["Altitude"], "0")
     XCTAssertEqual(exifData["GPS"]?["North or South Latitude"], "N")
     XCTAssertEqual(exifData["GPS"]?["East or West Longitude"], "E")
-    XCTAssertEqual(exifData["GPS"]?["Longitude"], " 4, 37, 41.88")
+    XCTAssertEqual(exifData["GPS"]?["Longitude"], "4, 37, 41.88")
     XCTAssertEqual(exifData["GPS"]?["Latitude"], "52, 24, 18.89")
     XCTAssertEqual(exifData["GPS"]?["Geodetic Survey Data Used"], "WGS-84")
     XCTAssertEqual(exifData["GPS"]?["GPS Tag Version"], "2.2.0.0")
@@ -189,13 +193,4 @@ final class SwiftExifTests: XCTestCase {
     XCTAssertEqual(keywords.count, keywordsFromDict.count)
 
   }
-
-  static var __allTests = [
-    ("test", test),
-    ("testExifReadExifData", testExifReadExifData),
-    ("testExifReadIfd", testExifReadIfd),
-    ("testExifEntry", testExifEntry),
-    ("testImageReadData", testImageReadData),
-    ("testIptcReadIptcData", testIptcReadIptcData),
-  ]
 }
