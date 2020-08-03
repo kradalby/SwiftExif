@@ -6,6 +6,8 @@ import XCTest
 
 let testImage = "Tests/test.jpg"
 let testImageSpecialCharacters = "Tests/test_special_chars.jpg"
+let testImagePhotosExport = "Tests/photos_export.jpg"
+let testImageOSXPhotosExifExport = "Tests/osxphotos_exif_export.jpg"
 
 final class SwiftExifTests: XCTestCase {
   func test() {
@@ -203,5 +205,30 @@ final class SwiftExifTests: XCTestCase {
 
     XCTAssertEqual(keywords.count, 4)
     XCTAssertTrue(keywords.contains("Midtøsten"))
+  }
+
+  func testIptcReadIptcDataPhotosExport() {
+    let iptcData = IptcData.new(imagePath: testImagePhotosExport)
+
+    XCTAssertNotNil(iptcData)
+
+    let keywords = iptcData!.keywords()
+
+    XCTAssertEqual(keywords.count, 2)
+    XCTAssertTrue(keywords.contains("Påbygging"))
+    XCTAssertTrue(keywords.contains("Julebord"))
+  }
+
+  func testIptcReadIptcDataOSXPhotosExifToolExport() {
+    let iptcData = IptcData.new(imagePath: testImageOSXPhotosExifExport)
+
+    XCTAssertNotNil(iptcData)
+
+    let keywords = iptcData!.keywords()
+    print(keywords)
+
+    XCTAssertEqual(keywords.count, 2)
+    XCTAssertTrue(keywords.contains("Påbygging"))
+    XCTAssertTrue(keywords.contains("Julebord"))
   }
 }
