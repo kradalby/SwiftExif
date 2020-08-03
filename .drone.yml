@@ -8,6 +8,28 @@
    "steps": [
       {
          "commands": [
+            "npm install prettier",
+            "npx prettier --check \"**/*.{ts,js,md,yaml,yml,sass,css,scss}\""
+         ],
+         "image": "node:lts",
+         "name": "prettier lint",
+         "pull": "always"
+      },
+      {
+         "commands": [
+            "git clone -b swift-5.2-branch https://github.com/apple/swift-format.git /tmp/swift-format",
+            "cd /tmp/swift-format",
+            "swift build --configuration release",
+            "ln -s .build/release/swift-format /usr/local/bin",
+            "cd -",
+            "swift-format -m lint"
+         ],
+         "image": "swift:latest",
+         "name": "Swift lint",
+         "pull": "always"
+      },
+      {
+         "commands": [
             "make test",
             "make build"
          ],
