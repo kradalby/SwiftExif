@@ -20,9 +20,8 @@
             "git clone -b swift-5.2-branch https://github.com/apple/swift-format.git /tmp/swift-format",
             "cd /tmp/swift-format",
             "swift build --configuration release",
-            "ln -s .build/release/swift-format /usr/bin",
             "cd -",
-            "swift-format -m lint"
+            "/tmp/swift-format/.build/release/swift-format -m lint"
          ],
          "image": "swift:latest",
          "name": "Swift lint",
