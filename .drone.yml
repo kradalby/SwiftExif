@@ -33,7 +33,7 @@
             "make test"
          ],
          "image": "kradalby/swift:groovy",
-         "name": "Swift build",
+         "name": "Swift test",
          "pull": "always"
       },
       {
