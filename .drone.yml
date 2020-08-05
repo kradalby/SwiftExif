@@ -21,7 +21,8 @@
             "cd /tmp/swift-format",
             "swift build --configuration release",
             "cd -",
-            "/tmp/swift-format/.build/release/swift-format -m lint"
+            "/tmp/swift-format/.build/release/swift-format format --recursive  Sources/ Package.swift",
+            "/tmp/swift-format/.build/release/swift-format lint --recursive  Sources/ Package.swift"
          ],
          "image": "swift:latest",
          "name": "Swift lint",
@@ -29,7 +30,14 @@
       },
       {
          "commands": [
-            "make test",
+            "make test"
+         ],
+         "image": "kradalby/swift:groovy",
+         "name": "Swift build",
+         "pull": "always"
+      },
+      {
+         "commands": [
             "make build"
          ],
          "image": "kradalby/swift:groovy",
