@@ -1,97 +1,78 @@
 ---
 {
-   "kind": "pipeline",
-   "name": "Kubernetes",
-   "node_selector": {
-      "drone": true
-   },
-   "steps": [
+  "dns_config": { "nameservers": ["1.1.1.1", "1.0.0.1"] },
+  "kind": "pipeline",
+  "name": "Kubernetes",
+  "node_selector": { "drone": true },
+  "platform": { "arch": "amd64", "os": "linux" },
+  "steps":
+    [
       {
-         "commands": [
+        "commands":
+          [
             "npm install prettier",
-            "npx prettier --check \"**/*.{ts,js,md,yaml,yml,sass,css,scss}\""
-         ],
-         "image": "node:lts",
-         "name": "Prettier lint",
-         "pull": "always"
+            'npx prettier --check "**/*.{ts,js,md,yaml,yml,sass,css,scss}"',
+          ],
+        "image": "node:lts-buster",
+        "name": "Prettier lint",
+        "pull": "always",
       },
       {
-         "commands": [
-            "git clone -b swift-5.2-branch https://github.com/apple/swift-format.git /tmp/swift-format",
+        "commands":
+          [
+            "git clone -b swift-5.3-branch https://github.com/apple/swift-format.git /tmp/swift-format",
             "cd /tmp/swift-format",
             "swift build --configuration release",
             "cd -",
             "/tmp/swift-format/.build/release/swift-format format --recursive  Sources/ Package.swift",
-            "/tmp/swift-format/.build/release/swift-format lint --recursive  Sources/ Package.swift"
-         ],
-         "image": "swift:latest",
-         "name": "Swift lint",
-         "pull": "always"
+            "/tmp/swift-format/.build/release/swift-format lint --recursive  Sources/ Package.swift",
+          ],
+        "image": "swift:latest",
+        "name": "Swift lint",
+        "pull": "always",
       },
       {
-         "commands": [
-            "make test"
-         ],
-         "image": "kradalby/swift:groovy",
-         "name": "Swift test",
-         "pull": "always"
+        "commands": ["make test"],
+        "image": "kradalby/swift:groovy",
+        "name": "Swift test",
+        "pull": "always",
       },
       {
-         "commands": [
-            "make build"
-         ],
-         "image": "kradalby/swift:groovy",
-         "name": "Swift build",
-         "pull": "always"
+        "commands": ["make build"],
+        "image": "kradalby/swift:groovy",
+        "name": "Swift build",
+        "pull": "always",
       },
       {
-         "image": "appleboy/drone-discord",
-         "name": "Notify Discord",
-         "pull": "always",
-         "settings": {
+        "image": "appleboy/drone-discord",
+        "name": "Notify Discord",
+        "pull": "always",
+        "settings":
+          {
             "message": "{{#success build.status}}\n✅  Build #{{build.number}} of `{{repo.name}}` succeeded.\n\n📝  Commit by {{commit.author}} on `{{commit.branch}}`:\n``` {{commit.message}} ```\n🌐  {{ build.link }}\n\n✅  duration: {{duration build.started build.finished}}\n✅  started: {{datetime build.started \"2006/01/02 15:04\" \"UTC\"}}\n✅  finished: {{datetime build.finished \"2006/01/02 15:04\" \"UTC\"}}\n\n{{else}}\n@everyone\n❌  Build #{{build.number}} of `{{repo.name}}` failed.\n\n📝  Commit by {{commit.author}} on `{{commit.branch}}`:\n``` {{commit.message}} ```\n🌐  {{ build.link }}\n\n✅  duration: {{duration build.started build.finished}}\n✅  started: {{datetime build.started \"2006/01/02 15:04\" \"UTC\"}}\n✅  finished: {{datetime build.finished \"2006/01/02 15:04\" \"UTC\"}}\n\n{{/success}}\n",
-            "webhook_id": {
-               "from_secret": "discord_webhook_id"
-            },
-            "webhook_token": {
-               "from_secret": "discord_webhook_token"
-            }
-         },
-         "when": {
-            "status": [
-               "success",
-               "failure"
-            ]
-         }
-      }
-   ],
-   "type": "kubernetes"
+            "webhook_id": { "from_secret": "discord_webhook_id" },
+            "webhook_token": { "from_secret": "discord_webhook_token" },
+          },
+        "when": { "status": ["success", "failure"] },
+      },
+    ],
+  "type": "kubernetes",
 }
 ---
 {
-   "get": {
-      "name": "id",
-      "path": "discord-build"
-   },
-   "kind": "secret",
-   "name": "discord_webhook_id"
+  "get": { "name": "id", "path": "discord-build" },
+  "kind": "secret",
+  "name": "discord_webhook_id",
 }
 ---
 {
-   "get": {
-      "name": "token",
-      "path": "discord-build"
-   },
-   "kind": "secret",
-   "name": "discord_webhook_token"
+  "get": { "name": "token", "path": "discord-build" },
+  "kind": "secret",
+  "name": "discord_webhook_token",
 }
 ---
 {
-   "get": {
-      "name": "deploy",
-      "path": "ssh"
-   },
-   "kind": "secret",
-   "name": "ssh_key"
+  "get": { "name": "deploy", "path": "ssh" },
+  "kind": "secret",
+  "name": "ssh_key",
 }
-...
