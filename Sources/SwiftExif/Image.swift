@@ -2,12 +2,6 @@ import Foundation
 import exif
 import iptc
 
-#if os(Linux)
-  import Glibc
-#else
-  import Darwin
-#endif
-
 public struct Image {
   var exifData: ExifData?
   var iptcData: IptcData?
