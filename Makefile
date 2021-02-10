@@ -1,12 +1,12 @@
-
 generate:
 	swift test --generate-linuxmain
+	make fmt
 
 build:
-	swift build
+	swift build -c debug --sanitize=thread
 
-build-cross:
-	swift build -Xswiftc '-DCROSSPLATFORM'
+build-release:
+	swift build --configuration release
 
 test:
 	swift test
@@ -29,7 +29,13 @@ lint:
 
 fmt:
 	swiftlint autocorrect
-	swift-format
+	swift-format --recursive --in-place Sources/ Package.swift
 
 run: build
 	./.build/x86_64-apple-macosx/debug/exiftest
+
+reset-lsp:
+	swift package reset
+	swift package update
+	killall sourcekit-lsp
+
