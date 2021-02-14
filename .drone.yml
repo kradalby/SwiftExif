@@ -58,21 +58,3 @@
     ],
   "type": "kubernetes",
 }
----
-{
-  "get": { "name": "id", "path": "discord-build" },
-  "kind": "secret",
-  "name": "discord_webhook_id",
-}
----
-{
-  "get": { "name": "token", "path": "discord-build" },
-  "kind": "secret",
-  "name": "discord_webhook_token",
-}
----
-{
-  "get": { "name": "deploy", "path": "ssh" },
-  "kind": "secret",
-  "name": "ssh_key",
-}
