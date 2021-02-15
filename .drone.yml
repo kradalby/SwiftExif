@@ -1,6 +1,5 @@
 ---
 {
-  "dns_config": { "nameservers": ["1.1.1.1", "1.0.0.1"] },
   "kind": "pipeline",
   "name": "Kubernetes",
   "node_selector": { "drone": true },
