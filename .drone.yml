@@ -10,6 +10,7 @@
         "commands":
           [
             "npm install prettier",
+            "echo .pre-commit-config.yaml >> .prettierignore",
             'npx prettier --check "**/*.{ts,js,md,yaml,yml,sass,css,scss}"',
           ],
         "image": "node:lts-buster",
