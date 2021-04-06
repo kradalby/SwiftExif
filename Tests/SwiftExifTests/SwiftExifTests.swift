@@ -231,4 +231,17 @@ final class SwiftExifTests: XCTestCase {
     XCTAssertTrue(keywords.contains("Påbygging"))
     XCTAssertTrue(keywords.contains("Julebord"))
   }
+
+  func testKnownFaulty() {
+    let iptcData = IptcData.new(imagePath: testImageOSXPhotosExifExport)
+
+    XCTAssertNotNil(iptcData)
+
+    let keywords = iptcData!.keywords()
+    print(keywords)
+
+    XCTAssertEqual(keywords.count, 4)
+    XCTAssertTrue(keywords.contains("Påbygging"))
+    XCTAssertTrue(keywords.contains("Julebord"))
+  }
 }
