@@ -33,13 +33,13 @@
       },
       {
         "commands": ["make test"],
-        "image": "kradalby/swift:groovy",
+        "image": "kradalby/swift:5.4-hirsute",
         "name": "Swift test",
         "pull": "always",
       },
       {
         "commands": ["make build"],
-        "image": "kradalby/swift:groovy",
+        "image": "kradalby/swift:5.4-hirsute",
         "name": "Swift build",
         "pull": "always",
       },
