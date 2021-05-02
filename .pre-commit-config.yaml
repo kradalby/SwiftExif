@@ -31,13 +31,13 @@ repos:
       - id: shellcheck
 
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.0.3
+    rev: v1.1.0
     hooks:
       - id: detect-secrets
         args:
           - --exclude-files .drone.yml
 
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.1.0
+    rev: v2.3.0
     hooks:
       - id: hadolint
