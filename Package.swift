@@ -26,7 +26,7 @@ let package = Package(
       pkgConfig: "libexif",
       providers: [
         .apt(["libexif-dev"]),
-        .brew(["libexif"]),
+        .brew(["libexif"])
       ]
     ),
     .systemLibrary(
@@ -34,7 +34,7 @@ let package = Package(
       pkgConfig: "libiptcdata",
       providers: [
         .apt(["libiptcdata0-dev"]),
-        .brew(["libiptcdata"]),
+        .brew(["libiptcdata"])
       ]
     ),
     .target(
@@ -49,7 +49,7 @@ let package = Package(
     .testTarget(
       name: "SwiftExifTests",
       dependencies: ["SwiftExif"]
-    ),
+    )
   ],
   swiftLanguageVersions: [.v5],
   cLanguageStandard: .c11

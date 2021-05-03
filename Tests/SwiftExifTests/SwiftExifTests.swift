@@ -186,7 +186,7 @@ final class SwiftExifTests: XCTestCase {
       dict["Keywords"] as! [String],
       [
         "Dharmesh Tailor", "2018", "Alkmaar", "Dharmesh Tailor", "Dutch weekend adventures", "ESA",
-        "Train", "YGT",
+        "Train", "YGT"
       ])
 
     let keywords = iptcData!.keywords()

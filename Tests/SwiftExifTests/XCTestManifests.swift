@@ -10,13 +10,13 @@ extension SwiftExifTests {
         ("testExifReadExifData", testExifReadExifData),
         ("testExifReadIfd", testExifReadIfd),
         ("testImageReadData", testImageReadData),
-        ("testIptcReadIptcData", testIptcReadIptcData),
+        ("testIptcReadIptcData", testIptcReadIptcData)
     ]
 }
 
 public func __allTests() -> [XCTestCaseEntry] {
     return [
-        testCase(SwiftExifTests.__allTests__SwiftExifTests),
+        testCase(SwiftExifTests.__allTests__SwiftExifTests)
     ]
 }
 #endif
