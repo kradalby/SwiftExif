@@ -20,14 +20,10 @@
       {
         "commands":
           [
-            "git clone -b swift-5.4-branch https://github.com/apple/swift-format.git /tmp/swift-format",
-            "cd /tmp/swift-format",
-            "swift build --configuration release",
-            "cd -",
-            "/tmp/swift-format/.build/release/swift-format format --recursive  Sources/ Package.swift",
-            "/tmp/swift-format/.build/release/swift-format lint --recursive  Sources/ Package.swift",
+            "swift-format format --recursive  Sources/ Package.swift",
+            "swift-format lint --recursive  Sources/ Package.swift",
           ],
-        "image": "swift:5.4-bionic",
+        "image": "kradalby/swift-format:5.4",
         "name": "Swift lint",
         "pull": "always",
       },
