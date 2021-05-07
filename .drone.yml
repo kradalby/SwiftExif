@@ -49,7 +49,12 @@
             "webhook_id": { "from_secret": "discord_webhook_id" },
             "webhook_token": { "from_secret": "discord_webhook_token" },
           },
-        "when": { "status": ["success", "failure"] },
+        "when":
+          {
+            "branch": ["master"],
+            "event": ["push"],
+            "status": ["success", "failure"],
+          },
       },
     ],
   "type": "kubernetes",
