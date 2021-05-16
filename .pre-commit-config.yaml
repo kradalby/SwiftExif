@@ -5,13 +5,14 @@ repos:
       - id: prettier
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.0
     hooks:
       - id: check-added-large-files
       - id: check-ast
       - id: check-case-conflict
       - id: check-docstring-first
       - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
@@ -30,14 +31,14 @@ repos:
     hooks:
       - id: shellcheck
 
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.1.0
-    hooks:
-      - id: detect-secrets
-        args:
-          - --exclude-files .drone.yml
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.1.0
+  #   hooks:
+  #     - id: detect-secrets
+  #       args:
+  #         - --exclude-files .drone.yml
 
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.4.0
+    rev: v2.4.1
     hooks:
       - id: hadolint
