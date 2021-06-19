@@ -39,6 +39,6 @@ repos:
   #         - --exclude-files .drone.yml
 
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.4.1
+    rev: v2.5.0
     hooks:
       - id: hadolint
