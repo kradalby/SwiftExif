@@ -39,7 +39,7 @@ let package = Package(
     ),
     .target(
       name: "ExifFormat",
-      dependencies: [],
+      dependencies: ["exif", "iptc"],
       path: "Sources/ExifFormat"
     ),
     .target(
