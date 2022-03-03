@@ -11,6 +11,11 @@ public struct Image {
     iptcData = IptcData.new(imagePath: imagePath.path)
   }
 
+    public init(_ data: Data) {
+      exifData = ExifData.new(data)
+      iptcData = IptcData.new(data)
+    }
+
   public func Exif() -> [String: [String: String]] {
     if var data = self.exifData {
       return data.toDict()
