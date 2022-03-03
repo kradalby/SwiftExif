@@ -61,7 +61,7 @@ public struct Image {
 }
 
 extension Image {
-    var orientation: Orientation {
+    public var orientation: Orientation {
         
         if let mainImage = self.ExifRaw()["0"],
            let orientationStr = mainImage["Orientation"],
