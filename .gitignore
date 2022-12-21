@@ -5,3 +5,5 @@
 xcuserdata/
 *.jpg
 *.jpeg
+.direnv
+.envrc
