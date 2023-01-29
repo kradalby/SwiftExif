@@ -13,6 +13,20 @@ extension IptcData {
     return nil
   }
 
+
+  static func new(_ data: Data) -> IptcData? {
+    data.withUnsafeBytes { (bytes: UnsafePointer<UInt8>) in
+      let rawUnsafeIptcData = iptc_data_new_from_data(bytes, UInt32(data.count))
+
+      if let rawIptcData = rawUnsafeIptcData {
+        return rawIptcData.pointee
+      }
+
+      return nil
+    }
+
+  }
+
   func datasets() -> [IptcDataSet] {
     if let rawDataset = self.datasets {
       let datasets = Array(

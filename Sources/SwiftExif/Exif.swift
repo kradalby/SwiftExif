@@ -22,6 +22,18 @@ extension ExifData {
     return nil
   }
 
+  static func new(_ data: Data) -> ExifData? {
+    data.withUnsafeBytes { (bytes: UnsafePointer<UInt8>) in
+      let rawUnsafeExifData = exif_data_new_from_data(bytes, UInt32(data.count))
+
+      if let rawExifData = rawUnsafeExifData {
+        return rawExifData.pointee
+      }
+
+      return nil
+    }
+  }
+
   mutating func content() -> [ExifContent] {
 
     let contents = withUnsafePointer(
