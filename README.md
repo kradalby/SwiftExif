@@ -23,7 +23,7 @@ ImageIO/CoreGraphics).
 On Ubuntu/Debian based Linux:
 
 ```bash
-apt install -y libiptc-data libexif-dev libiptcdata0-dev
+apt install -y libiptcdata-dev libexif-dev libiptcdata0-dev
 ```
 
 On macOS using brew:
