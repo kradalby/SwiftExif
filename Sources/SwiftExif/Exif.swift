@@ -138,6 +138,7 @@ extension ExifEntry {
   mutating func value() -> String {
 
     let value = UnsafeMutablePointer<Int8>.allocate(capacity: 256)
+    defer { value.deallocate() }
     exif_entry_get_value(
       &self,
       value,
@@ -151,6 +152,7 @@ extension ExifEntry {
 
   mutating func rawValue() -> String? {
     let value = UnsafeMutablePointer<Int8>.allocate(capacity: 256)
+    defer { value.deallocate() }
     exif_entry_format_value(
       &self,
       value,

@@ -1,22 +1,22 @@
 extension String {
-  init?(cString: UnsafeMutablePointer<Int8>?) {
-    guard let cString = cString else { return nil }
-    self = String(cString: cString)
+  init?(nullableCString: UnsafeMutablePointer<Int8>?) {
+    guard let nullableCString else { return nil }
+    self = String(cString: nullableCString)
   }
 
-  init?(cString: UnsafeMutablePointer<CUnsignedChar>?) {
-    guard let cString = cString else { return nil }
-    self = String(cString: cString)
+  init?(nullableCString: UnsafeMutablePointer<CUnsignedChar>?) {
+    guard let nullableCString else { return nil }
+    self = String(cString: nullableCString)
   }
 
-  init?(cString: Any) {
+  init?(nullableCString: Any) {
 
-    if let pointer = cString as? UnsafeMutablePointer<CChar> {
+    if let pointer = nullableCString as? UnsafeMutablePointer<CChar> {
       self = String(cString: pointer)
       return
     }
 
-    if let pointer = cString as? UnsafeMutablePointer<CUnsignedChar> {
+    if let pointer = nullableCString as? UnsafeMutablePointer<CUnsignedChar> {
       self = String(cString: pointer)
       return
     }

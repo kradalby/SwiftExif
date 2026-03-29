@@ -1,13 +1,22 @@
 import XCTest
+import Foundation
 
 @testable import SwiftExif
 @testable import exif
 @testable import iptc
 
-let testImage = "Tests/test.jpg"
-let testImageSpecialCharacters = "Tests/test_special_chars.jpg"
-let testImagePhotosExport = "Tests/photos_export.jpg"
-let testImageOSXPhotosExifExport = "Tests/osxphotos_exif_export.jpg"
+private let testsDirectoryURL = URL(fileURLWithPath: #filePath)
+  .deletingLastPathComponent()
+  .deletingLastPathComponent()
+
+private func testImagePath(_ imageName: String) -> String {
+  testsDirectoryURL.appendingPathComponent(imageName).path
+}
+
+let testImage = testImagePath("test.jpg")
+let testImageSpecialCharacters = testImagePath("test_special_chars.jpg")
+let testImagePhotosExport = testImagePath("photos_export.jpg")
+let testImageOSXPhotosExifExport = testImagePath("osxphotos_exif_export.jpg")
 
 final class SwiftExifTests: XCTestCase {
   func test() {
@@ -18,14 +27,17 @@ final class SwiftExifTests: XCTestCase {
   }
 
   func testExifReadExifData() {
-    let rawUnsafeExifData = exif_data_new_from_file(testImage)
-    var exifData = ExifData.new(imagePath: testImage)
+    guard let rawUnsafeExifData = exif_data_new_from_file(testImage) else {
+      XCTFail("Cannot load EXIF data from image at path: \(testImage)")
+      return
+    }
+    guard var exifData = ExifData.new(imagePath: testImage) else {
+      XCTFail("Cannot create ExifData from image at path: \(testImage)")
+      return
+    }
 
-    XCTAssertNotNil(rawUnsafeExifData)
-    XCTAssertNotNil(exifData)
-
-    let contents = rawUnsafeExifData!.pointee.content()
-    let contents2 = exifData!.content()
+    let contents = rawUnsafeExifData.pointee.content()
+    let contents2 = exifData.content()
 
     XCTAssertEqual(contents.count, 5)
     XCTAssertEqual(contents2.count, 5)
@@ -149,24 +161,27 @@ final class SwiftExifTests: XCTestCase {
   }
 
   func testIptcReadIptcData() {
-    let rawUnsafeIptcData = iptc_data_new_from_jpeg(testImage)
-    let iptcData = IptcData.new(imagePath: testImage)
+    guard let rawUnsafeIptcData = iptc_data_new_from_jpeg(testImage) else {
+      XCTFail("Cannot load IPTC data from image at path: \(testImage)")
+      return
+    }
+    guard let iptcData = IptcData.new(imagePath: testImage) else {
+      XCTFail("Cannot create IptcData from image at path: \(testImage)")
+      return
+    }
 
-    XCTAssertNotNil(rawUnsafeIptcData)
-    XCTAssertNotNil(iptcData)
+    let datasets = rawUnsafeIptcData.pointee.datasets()
+    let datasets2 = iptcData.datasets()
 
-    let datasets = rawUnsafeIptcData!.pointee.datasets()
-    let datasets2 = iptcData!.datasets()
-
-    XCTAssertEqual(datasets.count, Int(rawUnsafeIptcData!.pointee.count))
-    XCTAssertEqual(datasets2.count, Int(iptcData!.count))
+    XCTAssertEqual(datasets.count, Int(rawUnsafeIptcData.pointee.count))
+    XCTAssertEqual(datasets2.count, Int(iptcData.count))
     XCTAssertEqual(datasets.count, datasets2.count)
 
-    let tuples = iptcData!.toTuples()
+    let tuples = iptcData.toTuples()
 
     XCTAssertEqual(tuples.count, datasets2.count)
 
-    let dict = iptcData!.toDict()
+    let dict = iptcData.toDict()
     XCTAssertEqual(dict.count, 13)
 
     XCTAssertEqual(dict["Coded Character Set"] as! String, "1b 25 47")
@@ -189,7 +204,7 @@ final class SwiftExifTests: XCTestCase {
         "Train", "YGT"
       ])
 
-    let keywords = iptcData!.keywords()
+    let keywords = iptcData.keywords()
     let keywordsFromDict = dict["Keywords"] as! [String]
 
     XCTAssertEqual(keywords.count, 8)

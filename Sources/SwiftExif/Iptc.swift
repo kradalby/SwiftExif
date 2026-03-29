@@ -67,6 +67,7 @@ extension IptcData {
 extension IptcDataSet {
   mutating func value() -> String {
     let value = UnsafeMutablePointer<Int8>.allocate(capacity: 256)
+    defer { value.deallocate() }
     iptc_dataset_get_as_str(&self, value, 256)
 
     let str = String(cString: value)
@@ -76,7 +77,7 @@ extension IptcDataSet {
   func tagTitle() -> String? {
     let value = iptc_tag_get_title(self.record, self.tag)
 
-    let str = String(cString: value)
+    let str = String(nullableCString: value)
     return str
   }
 
@@ -87,7 +88,7 @@ extension IptcDataSet {
   mutating func formatName() -> String? {
     let value = iptc_format_get_name(self.format())
 
-    let str = String(cString: value)
+    let str = String(nullableCString: value)
     return str
   }
 
