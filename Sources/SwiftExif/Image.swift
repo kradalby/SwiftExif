@@ -6,11 +6,13 @@ public struct Image {
   var exifData: ExifData?
   var iptcData: IptcData?
 
+  @available(*, deprecated, message: "Use Image.parse(at:) for a Sendable typed result.")
   public init(imagePath: URL) {
     exifData = ExifData.new(imagePath: imagePath.path)
     iptcData = IptcData.new(imagePath: imagePath.path)
   }
 
+  @available(*, deprecated, message: "Use Image.parse(at:) and read ExifResult.exif.")
   public func Exif() -> [String: [String: String]] {
     if var data = self.exifData {
       return data.toDict()
@@ -18,6 +20,7 @@ public struct Image {
     return [:]
   }
 
+  @available(*, deprecated, message: "Use Image.parse(at:) and read ExifResult.exifRaw.")
   public func ExifRaw() -> [String: [String: String]] {
     if var data = self.exifData {
       return data.toRawDict()
@@ -25,6 +28,7 @@ public struct Image {
     return [:]
   }
 
+  @available(*, deprecated, message: "Use Image.parse(at:) and pair ExifResult.exif with .exifRaw.")
   public func ExifWithRaw() -> [String: [String: (String, String)]] {
     if var data = self.exifData {
       return data.toValueAndRawValueDict()
@@ -32,6 +36,7 @@ public struct Image {
     return [:]
   }
 
+  @available(*, deprecated, message: "Use Image.parse(at:) and read ExifResult.iptc.")
   public func Iptc() -> [String: Any] {
     if let data = self.iptcData {
       return data.toDict()
