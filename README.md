@@ -1,76 +1,102 @@
 # SwiftExif
 
-SwiftExif is a wrapping library for [libexif](https://libexif.github.io) and [libiptcdata](http://libiptcdata.sourceforge.net) for Swift
-to provide a JPEG metadata extraction on Linux and macOS.
+Swift wrapper around [libexif](https://libexif.github.io) and
+[libiptcdata](http://libiptcdata.sourceforge.net) for reading EXIF and
+IPTC metadata out of JPEG files on Linux and macOS.
 
-SwiftExif was written to facilitate porting the
-[Munin](https://github.com/kradalby/munin) image
-gallery generator to run on both Linux and macOS (it previously required
-ImageIO/CoreGraphics).
+## Status
 
-[libexif](https://libexif.github.io) is used to extract and format the EXIF data from the image, while
-[libiptcdata](http://libiptcdata.sourceforge.net) extracts the "newer" IPTC standard.
+Built for and primarily used by [Munin](https://github.com/kradalby/munin),
+a static photo gallery generator that needs EXIF and IPTC reads on Linux
+and macOS without ImageIO/CoreGraphics. The library is general; maintenance
+cadence is driven by what Munin asks for, but PRs from other consumers are
+welcome.
 
 ## Requirements
 
-- Linux (Ubuntu 20.10 tested) or macOS (10.15 tested)
-- Swift 5.2 (or newer)
-- libexif 0.6.22 (available in Homebrew or Ubuntu 20.10)
-- libiptcdata 1.0.4
-
-## Installation
-
-On Ubuntu/Debian based Linux:
+- Swift 6.3+
+- Linux or macOS
+- libexif and libiptcdata, installed system-wide and discoverable via
+  `pkg-config`
 
 ```bash
-apt install -y libiptcdata-dev libexif-dev libiptcdata0-dev
-```
+# Debian / Ubuntu
+apt install libexif-dev libiptcdata0-dev
 
-On macOS using brew:
-
-```bash
+# macOS
 brew install libexif libiptcdata
 ```
 
-### Swift Package Manager
-
-Add SwiftExif to your dependencies:
+## Use
 
 ```swift
-dependencies: [
-  .package(url: "https://github.com/kradalby/SwiftExif.git", from: "0.0.x"),
-]
+.package(url: "https://github.com/kradalby/SwiftExif.git", from: "0.1.0"),
 ```
-
-## Usage
-
-SwiftExif aims to provide some simple helper functions that essentially returns
-all the data as dictionaries.
-
-For example:
 
 ```swift
 import SwiftExif
 
-// Read a JPEG file and return an Image object
-// Note: current error behaviour is to return empty dictionaries, no error is thrown.
-let exifImage = SwiftExif.Image(imagePath: fileURL)
+let result = try Image.parse(at: fileURL)
 
-// Get a [String : [String : String]] dictionary. The first dictionary has items
-// from the spec e.g. 0, 1, EXIF, GPS...
-// The values are returned in "human readable format".
-let exifDict = exifImage.Exif()
+// Human-readable EXIF, keyed [ifd][tag] — ifds are "0", "1", "EXIF",
+// "GPS", "Interoperability". Empty when the source has no EXIF block.
+let exif: [String: [String: String]] = result.exif
 
-// Get a [String : [String : String]] dictionary. The first dictionary has items
-// from the spec e.g. 0, 1, EXIF, GPS...
-// The values are returned in a "raw" format.
-let exifRawDict = exifImage.ExifRaw()
+// Raw EXIF, same shape; use this when you want numeric values without
+// libexif's localised rendering.
+let exifRaw: [String: [String: String]] = result.exifRaw
 
-// Get a [String : Any] dictionary.
-// Most items are String, however "Keywords" are [String]
-let iptcDict = exifImage.Iptc()
+// EXIF Orientation tag, decoded; nil when absent.
+let orientation: Orientation? = result.orientation
+
+// IPTC, typed. The four string fields Munin reads are pulled out of
+// the IPTC blob; everything else lands in extras.
+let iptc: IptcFields = result.iptc
+print(iptc.keywords)        // [String]
+print(iptc.city)             // String?
+print(iptc.countryName)      // String?
+print(iptc.extras["Date Created"])
 ```
 
-In addition to the high-level functions, a set of lower-level functions is
-available in the different classes.
-Have a look at the code or the unit tests to see what else you can do.
+`parse(at:)` throws `ParseError.fileUnreadable` when the path doesn't
+resolve to a readable file. A readable file with no EXIF or IPTC is
+not an error: the dicts come back empty and `orientation` is `nil`.
+
+For in-memory bytes:
+
+```swift
+let result = Image.parse(data: jpegBytes)   // never throws; empty result on garbage
+```
+
+`ExifResult`, `IptcFields`, `Orientation`, and `ParseError` are
+`Sendable`, so the result crosses task boundaries without an
+`@unchecked` wrapper.
+
+## How it builds
+
+Two system library targets (`exif`, `iptc`) bind libexif and
+libiptcdata through their public headers via `pkg-config`. A third C
+target, `ExifFormat`, reimplements `exif_entry_format_value` — a
+function that remains private in libexif's installed headers as of
+0.6.25 — so the Swift code can format raw EXIF values without forking
+libexif itself.
+
+## Versioning
+
+- **0.1.0** — current. Adds `Image.parse(at:)` / `parse(data:)`
+  returning a `Sendable` `ExifResult`, frees libexif/libiptcdata
+  allocations after extraction, and migrates the test suite to
+  swift-testing. The legacy dict-returning API
+  (`Image(imagePath:)`/`Exif()`/`ExifRaw()`/`ExifWithRaw()`/`Iptc()`)
+  keeps working unchanged but emits `@available(*, deprecated)`
+  warnings pointing at `parse(at:)`. Removal no earlier than 0.2.0.
+- **0.0.7** — last release before this one. Predates the Swift 6.3
+  nullability fix and is not Sendable-friendly. Migrate via
+  `from: "0.1.0"`.
+
+## Known limitations
+
+- IPTC keyword decoding ignores the per-block charset declaration that
+  ExifTool emits, so non-ASCII keywords on those exports come back
+  mojibake'd. The corresponding test is annotated with
+  `withKnownIssue`. Fix is queued for a follow-up minor.
