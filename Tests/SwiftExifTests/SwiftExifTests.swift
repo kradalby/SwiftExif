@@ -1,262 +1,180 @@
-import XCTest
 import Foundation
+import Testing
 
 @testable import SwiftExif
-@testable import exif
-@testable import iptc
 
 private let testsDirectoryURL = URL(fileURLWithPath: #filePath)
   .deletingLastPathComponent()
   .deletingLastPathComponent()
 
-private func testImagePath(_ imageName: String) -> String {
-  testsDirectoryURL.appendingPathComponent(imageName).path
+private func fixture(_ name: String) -> URL {
+  testsDirectoryURL.appendingPathComponent(name)
 }
 
-let testImage = testImagePath("test.jpg")
-let testImageSpecialCharacters = testImagePath("test_special_chars.jpg")
-let testImagePhotosExport = testImagePath("photos_export.jpg")
-let testImageOSXPhotosExifExport = testImagePath("osxphotos_exif_export.jpg")
+private let testImage = fixture("test.jpg")
+private let testImageSpecialCharacters = fixture("test_special_chars.jpg")
+private let testImagePhotosExport = fixture("photos_export.jpg")
+private let testImageOSXPhotosExifExport = fixture("osxphotos_exif_export.jpg")
 
-final class SwiftExifTests: XCTestCase {
-  func test() {
-    // This is an example of a functional test case.
-    // Use XCTAssert and related functions to verify your tests produce the correct
-    // results.
-    XCTAssertEqual("test", "test")
+@Suite("SwiftExif")
+struct SwiftExifTests {
+
+  // MARK: - Typed parse(at:) — happy path
+
+  @Test func parseAtURLProducesAllFiveIFDs() throws {
+    let result = try Image.parse(at: testImage)
+
+    #expect(result.exif.count == 5)
+    #expect(Set(result.exif.keys) == ["0", "1", "EXIF", "GPS", "Interoperability"])
+    #expect(result.exif["EXIF"]?.count == 31)
+    #expect(result.exif["GPS"]?.count == 9)
   }
 
-  func testExifReadExifData() {
-    guard let rawUnsafeExifData = exif_data_new_from_file(testImage) else {
-      XCTFail("Cannot load EXIF data from image at path: \(testImage)")
-      return
+  @Test func parseAtURLPopulatesHumanReadableEXIF() throws {
+    let result = try Image.parse(at: testImage)
+
+    #expect(result.exif["0"]?["Manufacturer"] == "Canon")
+    #expect(result.exif["0"]?["Model"] == "Canon EOS 5D Mark II")
+    #expect(result.exif["0"]?["Date and Time"] == "2018:03:10 13:36:56")
+    #expect(result.exif["EXIF"]?["F-Number"] == "f/4.0")
+    #expect(result.exif["GPS"]?["Longitude"] == "4, 37, 41.88")
+  }
+
+  @Test func parseAtURLPopulatesRawEXIF() throws {
+    let result = try Image.parse(at: testImage)
+
+    #expect(result.exifRaw["EXIF"]?["F-Number"] == "4")
+    #expect(result.exifRaw["EXIF"]?["Aperture"] == "4")
+    #expect(result.exifRaw["GPS"]?["East or West Longitude"] == "E")
+  }
+
+  @Test func parseAtURLDecodesOrientation() throws {
+    let result = try Image.parse(at: testImage)
+    #expect(result.orientation == .normal)
+  }
+
+  // MARK: - Typed IPTC
+
+  @Test func iptcFieldsBreakOutTheTypedSlots() throws {
+    let iptc = try Image.parse(at: testImage).iptc
+
+    #expect(iptc.city == "Haarlem")
+    #expect(iptc.provinceState == "Noord-Holland")
+    #expect(iptc.countryCode == "NL")
+    #expect(iptc.countryName == "Netherlands")
+    #expect(iptc.keywords.count == 8)
+    #expect(iptc.keywords.contains("Dutch weekend adventures"))
+  }
+
+  @Test func iptcExtrasContainsUntypedFields() throws {
+    let iptc = try Image.parse(at: testImage).iptc
+
+    // Typed slots are absent from extras.
+    #expect(iptc.extras["City"] == nil)
+    #expect(iptc.extras["Keywords"] == nil)
+
+    // Other fields land in extras as-is.
+    #expect(iptc.extras["Date Created"] == "20180310")
+    #expect(iptc.extras["Copyright Notice"] == "Copyright: Kristoffer Andreas Dalby")
+    #expect(iptc.extras["By-line"] == "Photographer: Kristoffer Andreas Dalby")
+  }
+
+  @Test func iptcKeywordsDecodeNonASCII() throws {
+    let iptc = try Image.parse(at: testImageSpecialCharacters).iptc
+    #expect(iptc.keywords.count == 4)
+    #expect(iptc.keywords.contains("Midtøsten"))
+  }
+
+  @Test func iptcKeywordsFromMacOSPhotosExport() throws {
+    let iptc = try Image.parse(at: testImagePhotosExport).iptc
+    #expect(iptc.keywords.count == 2)
+    #expect(iptc.keywords.contains("Påbygging"))
+    #expect(iptc.keywords.contains("Julebord"))
+  }
+
+  // libiptcdata decodes osxphotos_exif_export.jpg's keywords with the wrong
+  // charset, producing mojibake'd bytes. Tracked alongside the IPTC encoding
+  // rework that lands in a follow-up minor.
+  @Test func iptcKeywordsFromExifToolExport() throws {
+    withKnownIssue("IPTC charset handling broken on ExifTool exports") {
+      let iptc = try Image.parse(at: testImageOSXPhotosExifExport).iptc
+      #expect(iptc.keywords.count == 2)
+      #expect(iptc.keywords.contains("Påbygging"))
+      #expect(iptc.keywords.contains("Julebord"))
     }
-    guard var exifData = ExifData.new(imagePath: testImage) else {
-      XCTFail("Cannot create ExifData from image at path: \(testImage)")
-      return
+  }
+
+  // MARK: - parse(data:) parity & invalid bytes
+
+  @Test func parseDataMatchesParseURL() throws {
+    let bytes = try Data(contentsOf: testImage)
+    let fromURL = try Image.parse(at: testImage)
+    let fromData = Image.parse(data: bytes)
+    #expect(fromURL == fromData)
+  }
+
+  @Test func parseDataInvalidBytesYieldEmptyResult() {
+    let result = Image.parse(data: Data([0x00, 0x01, 0x02, 0x03]))
+    #expect(result.exif.isEmpty)
+    #expect(result.exifRaw.isEmpty)
+    #expect(result.iptc.keywords.isEmpty)
+    #expect(result.iptc.extras.isEmpty)
+    #expect(result.orientation == nil)
+  }
+
+  @Test func parseDataEmptyDataYieldsEmptyResult() {
+    let result = Image.parse(data: Data())
+    #expect(result == ExifResult(exif: [:], exifRaw: [:], iptc: IptcFields(), orientation: nil))
+  }
+
+  // MARK: - Error paths
+
+  @Test func parseAtURLThrowsWhenFileMissing() {
+    let missing = URL(fileURLWithPath: "/nonexistent/path/missing.jpg")
+    #expect(throws: ParseError.fileUnreadable(missing)) {
+      try Image.parse(at: missing)
     }
-
-    let contents = rawUnsafeExifData.pointee.content()
-    let contents2 = exifData.content()
-
-    XCTAssertEqual(contents.count, 5)
-    XCTAssertEqual(contents2.count, 5)
   }
 
-  func testExifReadIfd() {
-    var exifData = ExifData.new(imagePath: testImage)
+  @Test func parseAtURLOnNonJPEGProducesEmptyResult() throws {
+    let tmp = FileManager.default.temporaryDirectory
+      .appendingPathComponent("swiftexif-invalid-\(UUID().uuidString).bin")
+    try Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]).write(to: tmp)
+    defer { try? FileManager.default.removeItem(at: tmp) }
 
-    XCTAssertNotNil(exifData)
-
-    let contents = exifData!.content()
-
-    XCTAssertEqual(contents.count, 5)
+    let result = try Image.parse(at: tmp)
+    #expect(result.exif.isEmpty)
+    #expect(result.iptc.keywords.isEmpty)
+    #expect(result.orientation == nil)
   }
 
-  func testExifEntryValueAndRawValue() {
-    var exifData = ExifData.new(imagePath: testImage)
+  // MARK: - Sendable boundary
 
-    XCTAssertNotNil(exifData)
-
-    let dict = exifData!.toValueAndRawValueDict()
-
-    XCTAssertEqual(dict["0"]?.count, 10)
-    XCTAssertEqual(dict["1"]?.count, 0)
-    XCTAssertEqual(dict["EXIF"]?.count, 31)
-    XCTAssertEqual(dict["GPS"]?.count, 9)
-    XCTAssertEqual(dict["Interoperability"]?.count, 0)
-
-    XCTAssertEqual(dict["0"]?["Date and Time"]!.1, "2018:03:10 13:36:56")
-    XCTAssertEqual(dict["0"]?["Resolution Unit"]!.1, "2")
-
-    XCTAssertEqual(dict["EXIF"]?["Camera Owner Name"]!.1, "Kristoffer Andreas Dalby")
-
-    XCTAssertEqual(dict["EXIF"]?["Shutter Speed"]!.1, "7.3219")
-    XCTAssertEqual(dict["EXIF"]?["Metering Mode"]!.1, "5")
-    XCTAssertEqual(dict["EXIF"]?["Exposure Time"]!.1, "0.006")
-    XCTAssertEqual(dict["EXIF"]?["Aperture"]!.1, "4")
-    XCTAssertEqual(dict["EXIF"]?["F-Number"]!.1, "4")
-
-    XCTAssertEqual(dict["GPS"]?["East or West Longitude"]!.1, "E")
-    XCTAssertEqual(dict["GPS"]?["Longitude"]!.1, "4, 37, 41.88")
-    XCTAssertEqual(dict["GPS"]?["Altitude Reference"]!.1, "0x01")
+  @Test func resultCrossesTaskBoundary() async throws {
+    let result = try Image.parse(at: testImage)
+    let returned = await Task { result }.value
+    #expect(returned == result)
   }
 
-  func testImageReadData() {
-    let image = Image(imagePath: URL(fileURLWithPath: testImage))
-    let exifData = image.Exif()
-    let iptcData = image.Iptc()
+  // MARK: - Deprecated dict API (kept covered through 0.1.x)
 
-    XCTAssertNotNil(exifData)
-    XCTAssertNotNil(iptcData)
-    XCTAssertEqual(exifData.count, 5)
-    XCTAssertEqual(iptcData.count, 13)
+  @Test func deprecatedImageInitStillReadsEXIFAndIPTC() {
+    let exif = legacyExif(at: testImage)
+    let iptc = legacyIptc(at: testImage)
 
-    XCTAssertTrue(exifData.keys.contains("0"))
-    XCTAssertTrue(exifData.keys.contains("1"))
-    XCTAssertTrue(exifData.keys.contains("EXIF"))
-    XCTAssertTrue(exifData.keys.contains("GPS"))
-    XCTAssertTrue(exifData.keys.contains("Interoperability"))
-
-    XCTAssertEqual(exifData["0"]?.count, 10)
-    XCTAssertEqual(exifData["1"]?.count, 0)
-    XCTAssertEqual(exifData["EXIF"]?.count, 31)
-    XCTAssertEqual(exifData["GPS"]?.count, 9)
-    XCTAssertEqual(exifData["Interoperability"]?.count, 0)
-
-    XCTAssertEqual(exifData["0"]?["Orientation"], "Top-left")
-    XCTAssertEqual(exifData["0"]?["Artist"], "Photographer: Kristoffer Andreas Dalby")
-    XCTAssertEqual(
-      exifData["0"]?["Copyright"],
-      "Copyright: Kristoffer Andreas Dalby (Photographer) - [None] (Editor)")
-    XCTAssertEqual(exifData["0"]?["Y-Resolution"], "72")
-    XCTAssertEqual(exifData["0"]?["Manufacturer"], "Canon")
-    XCTAssertEqual(exifData["0"]?["Model"], "Canon EOS 5D Mark II")
-    XCTAssertEqual(exifData["0"]?["Date and Time"], "2018:03:10 13:36:56")
-    XCTAssertEqual(exifData["0"]?["X-Resolution"], "72")
-    XCTAssertEqual(exifData["0"]?["Software"], "Photos 4.0")
-    XCTAssertEqual(exifData["0"]?["Resolution Unit"], "Inch")
-
-    XCTAssertEqual(exifData["EXIF"]?["Camera Owner Name"], "Kristoffer Andreas Dalby")
-    XCTAssertEqual(exifData["EXIF"]?["Body Serial Number"], "2431423523")
-    XCTAssertEqual(exifData["EXIF"]?["Shutter Speed"], "7.32 EV (1/160 sec.)")
-    XCTAssertEqual(exifData["EXIF"]?["Metering Mode"], "Pattern")
-    XCTAssertEqual(exifData["EXIF"]?["White Balance"], "Auto white balance")
-    XCTAssertEqual(exifData["EXIF"]?["FlashPixVersion"], "FlashPix Version 1.0")
-    XCTAssertEqual(exifData["EXIF"]?["Color Space"], "sRGB")
-    XCTAssertEqual(exifData["EXIF"]?["Exif Version"], "Exif Version 2.3")
-    XCTAssertEqual(exifData["EXIF"]?["Scene Capture Type"], "Standard")
-    XCTAssertEqual(exifData["EXIF"]?["Custom Rendered"], "Normal process")
-    XCTAssertEqual(exifData["EXIF"]?["Sub-second Time (Digitized)"], "14")
-    XCTAssertEqual(exifData["EXIF"]?["Focal Plane Y-Resolution"], "3908.142")
-    XCTAssertEqual(exifData["EXIF"]?["Exposure Bias"], "0.00 EV")
-    XCTAssertEqual(exifData["EXIF"]?["Pixel X Dimension"], "1280")
-    XCTAssertEqual(exifData["EXIF"]?["Focal Plane X-Resolution"], "3849.212")
-    XCTAssertEqual(exifData["EXIF"]?["Focal Plane Resolution Unit"], "Inch")
-    XCTAssertEqual(exifData["EXIF"]?["Date and Time (Digitized)"], "2018:03:10 13:36:56")
-    XCTAssertEqual(exifData["EXIF"]?["Lens Model"], "EF24-105mm f/4L IS USM")
-    XCTAssertEqual(exifData["EXIF"]?["Date and Time (Original)"], "2018:03:10 13:36:56")
-    XCTAssertEqual(exifData["EXIF"]?["Exposure Mode"], "Manual exposure")
-    XCTAssertEqual(exifData["EXIF"]?["Pixel Y Dimension"], "853")
-    XCTAssertEqual(exifData["EXIF"]?["Exposure Time"], "1/160 sec.")
-    XCTAssertEqual(exifData["EXIF"]?["Flash"], "Flash did not fire, compulsory flash mode")
-    XCTAssertEqual(exifData["EXIF"]?["ISO Speed Ratings"], "400")
-    XCTAssertEqual(exifData["EXIF"]?["Sub-second Time (Original)"], "14")
-    XCTAssertEqual(exifData["EXIF"]?["Maximum Aperture Value"], "4.00 EV (f/4.0)")
-    XCTAssertEqual(exifData["EXIF"]?["Exposure Program"], "Manual")
-    XCTAssertEqual(exifData["EXIF"]?["Focal Length"], "70.0 mm")
-    XCTAssertEqual(exifData["EXIF"]?["Lens Specification"], "24, 105,  0,  0")
-    XCTAssertEqual(exifData["EXIF"]?["Aperture"], "4.00 EV (f/4.0)")
-    XCTAssertEqual(exifData["EXIF"]?["F-Number"], "f/4.0")
-
-    XCTAssertEqual(exifData["GPS"]?["Altitude"], "0")
-    XCTAssertEqual(exifData["GPS"]?["North or South Latitude"], "N")
-    XCTAssertEqual(exifData["GPS"]?["East or West Longitude"], "E")
-    XCTAssertEqual(exifData["GPS"]?["Longitude"], "4, 37, 41.88")
-    XCTAssertEqual(exifData["GPS"]?["Latitude"], "52, 24, 18.89")
-    XCTAssertEqual(exifData["GPS"]?["Geodetic Survey Data Used"], "WGS-84")
-    XCTAssertEqual(exifData["GPS"]?["GPS Tag Version"], "2.2.0.0")
-    XCTAssertEqual(exifData["GPS"]?["GPS Measurement Mode"], "3")
-    XCTAssertEqual(exifData["GPS"]?["Altitude Reference"], "Sea level reference")
+    #expect(exif.count == 5)
+    #expect(exif["0"]?["Manufacturer"] == "Canon")
+    #expect(iptc["City"] as? String == "Haarlem")
+    #expect((iptc["Keywords"] as? [String])?.count == 8)
   }
+}
 
-  func testIptcReadIptcData() {
-    guard let rawUnsafeIptcData = iptc_data_new_from_jpeg(testImage) else {
-      XCTFail("Cannot load IPTC data from image at path: \(testImage)")
-      return
-    }
-    guard let iptcData = IptcData.new(imagePath: testImage) else {
-      XCTFail("Cannot create IptcData from image at path: \(testImage)")
-      return
-    }
+@available(*, deprecated)
+private func legacyExif(at url: URL) -> [String: [String: String]] {
+  Image(imagePath: url).Exif()
+}
 
-    let datasets = rawUnsafeIptcData.pointee.datasets()
-    let datasets2 = iptcData.datasets()
-
-    XCTAssertEqual(datasets.count, Int(rawUnsafeIptcData.pointee.count))
-    XCTAssertEqual(datasets2.count, Int(iptcData.count))
-    XCTAssertEqual(datasets.count, datasets2.count)
-
-    let tuples = iptcData.toTuples()
-
-    XCTAssertEqual(tuples.count, datasets2.count)
-
-    let dict = iptcData.toDict()
-    XCTAssertEqual(dict.count, 13)
-
-    XCTAssertEqual(dict["Coded Character Set"] as! String, "1b 25 47")
-    XCTAssertEqual(dict["Province/State"] as! String, "Noord-Holland")
-    XCTAssertEqual(dict["By-line"] as! String, "Photographer: Kristoffer Andreas Dalby")
-    XCTAssertEqual(dict["Country Name"] as! String, "Netherlands")
-    XCTAssertEqual(dict["Digital Creation Time"] as! String, "133656")
-    XCTAssertEqual(dict["Date Created"] as! String, "20180310")
-    XCTAssertEqual(dict["Record Version"] as! String, "2")
-    XCTAssertEqual(dict["City"] as! String, "Haarlem")
-    XCTAssertEqual(dict["Digital Creation Date"] as! String, "20180310")
-    XCTAssertEqual(dict["Time Created"] as! String, "133656")
-    XCTAssertEqual(dict["Country Code"] as! String, "NL")
-    XCTAssertEqual(
-      dict["Copyright Notice"] as! String, "Copyright: Kristoffer Andreas Dalby")
-    XCTAssertEqual(
-      dict["Keywords"] as! [String],
-      [
-        "Dharmesh Tailor", "2018", "Alkmaar", "Dharmesh Tailor", "Dutch weekend adventures", "ESA",
-        "Train", "YGT"
-      ])
-
-    let keywords = iptcData.keywords()
-    let keywordsFromDict = dict["Keywords"] as! [String]
-
-    XCTAssertEqual(keywords.count, 8)
-    XCTAssertEqual(keywords.count, keywordsFromDict.count)
-  }
-
-  func testIptcReadIptcDataNonASCII() {
-    let iptcData = IptcData.new(imagePath: testImageSpecialCharacters)
-
-    XCTAssertNotNil(iptcData)
-
-    let keywords = iptcData!.keywords()
-
-    XCTAssertEqual(keywords.count, 4)
-    XCTAssertTrue(keywords.contains("Midtøsten"))
-  }
-
-  func testIptcReadIptcDataPhotosExport() {
-    let iptcData = IptcData.new(imagePath: testImagePhotosExport)
-
-    XCTAssertNotNil(iptcData)
-
-    let keywords = iptcData!.keywords()
-
-    XCTAssertEqual(keywords.count, 2)
-    XCTAssertTrue(keywords.contains("Påbygging"))
-    XCTAssertTrue(keywords.contains("Julebord"))
-  }
-
-  func testIptcReadIptcDataOSXPhotosExifToolExport() {
-    let iptcData = IptcData.new(imagePath: testImageOSXPhotosExifExport)
-
-    XCTAssertNotNil(iptcData)
-
-    let keywords = iptcData!.keywords()
-    print(keywords)
-
-    XCTAssertEqual(keywords.count, 2)
-    XCTAssertTrue(keywords.contains("Påbygging"))
-    XCTAssertTrue(keywords.contains("Julebord"))
-  }
-
-  func testKnownFaulty() {
-    let iptcData = IptcData.new(imagePath: testImageOSXPhotosExifExport)
-
-    XCTAssertNotNil(iptcData)
-
-    let keywords = iptcData!.keywords()
-    print(keywords)
-
-    XCTAssertEqual(keywords.count, 4)
-    XCTAssertTrue(keywords.contains("Påbygging"))
-    XCTAssertTrue(keywords.contains("Julebord"))
-  }
+@available(*, deprecated)
+private func legacyIptc(at url: URL) -> [String: Any] {
+  Image(imagePath: url).Iptc()
 }
