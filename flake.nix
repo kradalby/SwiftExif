@@ -9,27 +9,13 @@
     nixpkgs,
     flake-utils,
     ...
-  }: let
-    version =
-      if (self ? shortRev)
-      then self.shortRev
-      else "dev";
-  in
-    {
-      overlay = final: prev: let
-        pkgs = nixpkgs.legacyPackages.${prev.system};
-      in rec {
-      };
-    }
-    // flake-utils.lib.eachDefaultSystem
+  }:
+    flake-utils.lib.eachDefaultSystem
     (system: let
-      pkgs = import nixpkgs {
-        overlays = [self.overlay];
-        inherit system;
-      };
-    in rec {
+      pkgs = import nixpkgs {inherit system;};
+    in {
       # `nix develop`
-      devShell = pkgs.mkShell {
+      devShells.default = pkgs.mkShell {
         nativeBuildInputs = [pkgs.pkg-config];
         buildInputs = with pkgs;
           [
@@ -37,6 +23,8 @@
             coreutils
             libexif
             libiptcdata
+            swift-format
+            sourcekit-lsp
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [
             swift
