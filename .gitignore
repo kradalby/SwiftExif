@@ -6,4 +6,7 @@ xcuserdata/
 *.jpg
 *.jpeg
 .direnv
-.envrc
+.envrc.local
+result
+result-*
+.claude/settings.local.json
